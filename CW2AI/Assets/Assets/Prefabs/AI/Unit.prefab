@@ -36,7 +36,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0.25}
-  m_SizeDelta: {x: 0.85, y: 0.15}
+  m_SizeDelta: {x: 0.65, y: 0.15}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!23 &2166031521914227520
 MeshRenderer:
@@ -357,7 +357,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Target: {fileID: 8595610368934364104}
   isMoving: 0
-  isStuck: 0
   movementSpeed: 0
   emotePrefabs:
   - {fileID: 1080487162475273900, guid: 2939dc2440a7e4847be762723e9955a3, type: 3}
@@ -417,11 +416,11 @@ MonoBehaviour:
   Name: 
   Health: 10
   Role: 
+  Attack: 1
   Status: {fileID: 6388161222911589270}
   Emote: {fileID: 7378243753656274354}
   onSchedule: 0
   Schedule: []
-  Enemy: {fileID: 0}
 --- !u!1 &8595610368382822263
 GameObject:
   m_ObjectHideFlags: 0

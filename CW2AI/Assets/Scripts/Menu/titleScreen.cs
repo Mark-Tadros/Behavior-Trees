@@ -30,7 +30,7 @@ public class titleScreen : MonoBehaviour
         LeanTween.alphaCanvas(subButton.GetComponent<CanvasGroup>(), 0, 0.5f).setEase(LeanTweenType.easeInOutQuad);
         LeanTween.alphaCanvas(tutorialButton.GetComponent<CanvasGroup>(), 0, 0.5f).setEase(LeanTweenType.easeInOutQuad);
         yield return new WaitForSeconds(0.5f);
-        LeanTween.value(this.gameObject, SpeedUp, 2f, 14f, 5f).setEase(LeanTweenType.easeInOutQuad);
+        LeanTween.value(this.gameObject, SpeedUp, 2f, 12f, 5f).setEase(LeanTweenType.easeInOutQuad);
         // Removes all HUD objects.
         titleButton.SetActive(false);
         subButton.SetActive(false);
@@ -38,7 +38,7 @@ public class titleScreen : MonoBehaviour
         // Activates all Player Inputs and game commands.
         cameraMain.GetComponent<cameraMove>().enabled = true;
         cameraObject.GetComponent<cameraStop>().enabled = true;        
-        Grid.Kingdom.LateStart(); Grid.Kingdom.CreateUnit("Captain");
+        Grid.Kingdom.LateStart(); Grid.Kingdom.CreateUnit("King");
         yield return new WaitForSeconds(0.5f);
         LeanTween.value(this.gameObject, SetAlpha, 0, 0.75f, 5f).setEase(LeanTweenType.easeInOutQuad);
         yield return new WaitForSeconds(5f);
@@ -69,5 +69,5 @@ public class titleScreen : MonoBehaviour
         Grid.Kingdom.Buildings[0].GetChild(1).GetChild(3).GetChild(0).GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 1f, 1f);
     }
     public void RestartScene() { SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex); Time.timeScale = 1; }
-    void ChangeSpeed() { if (Time.timeScale == 2) { Time.timeScale = 14; speedIcon.SetActive(true); } else { Time.timeScale = 2; speedIcon.SetActive(false); } }
+    void ChangeSpeed() { if (Time.timeScale == 2) { Time.timeScale = 12; speedIcon.SetActive(true); } else { Time.timeScale = 2; speedIcon.SetActive(false); } }
 }

@@ -9,9 +9,11 @@ public class kingdomManager : MonoBehaviour
     [HideInInspector] public GridManager Grid;
     public GameObject GameOverObjectTitle;
     public GameObject GameOverObjectSubTitle;
+    public GameObject Actions;
+    public GameObject gameText;
     // Stores the Kingdoms Resources.
-    public float Science;
-    RectTransform ScienceFill; 
+    public float Religion;
+    RectTransform ReligionFill; 
     public float Public;
     RectTransform PublicFill;
     public float Military;
@@ -31,15 +33,15 @@ public class kingdomManager : MonoBehaviour
     public List<unitManager> Enemies;
     public List<Transform> Buildings;
     public List<Transform> Roads;
-    public Transform ResearchBuilding;
-    public List<Transform> researchUnits;
-    int isResearching;
+    public Transform Church;
+    public List<Transform> churchUnits;
+    int isPraying;
 
     private Queue<IEnumerator> coroutineQueue = new Queue<IEnumerator>();
     void Awake()
     {
         Grid = GameObject.Find("pathfindingManager").GetComponent<GridManager>();
-        isResearching = 0;
+        isPraying = 0;
         StartCoroutine(CoroutineCoordinator());
     }
     IEnumerator CoroutineCoordinator()
@@ -53,16 +55,16 @@ public class kingdomManager : MonoBehaviour
     // Calls the incremental checks to control the HiveMind AI.
     public void LateStart()
     {
-        InvokeRepeating("FindCaptain", 15f, 10f);
+        InvokeRepeating("FindKing", 15f, 10f);
         InvokeRepeating("FindWorkers", 2.5f, 2.5f);
-        InvokeRepeating("FindSoldiers", 5f, 5f);
+        InvokeRepeating("FindKnights", 5f, 5f);
         StartCoroutine(CreateEnemies());
     }
     public void UpdateResources()
     {
         // Updates the physical visuals once subtracted or added to.
-        ScienceFill.localScale = new Vector3(1, Science / 100, 1);
-        if (Science < 0) Science = 0; if (Science > 100) Science = 100;
+        ReligionFill.localScale = new Vector3(1, Religion / 100, 1);
+        if (Religion < 0) Religion = 0; if (Religion > 100) Religion = 100;
         PublicFill.localScale = new Vector3(1, Public / 100, 1);
         if (Public < 0) Public = 0; if (Public > 100) Public = 100;
         MilitaryFill.localScale = new Vector3(1, Military / 100, 1);
@@ -76,12 +78,12 @@ public class kingdomManager : MonoBehaviour
         Gold -= 0.25f;
         Military += 0.25f;
         Public -= 0.1f;
-        Science -= 0.1f;
+        Religion -= 0.1f;
         UpdateResources();
     }
-    void SubtractScience()
+    void SubtractReligion()
     {
-        Science -= 1f;
+        Religion -= 1f;
         UpdateResources();
     }
     // Create a new Unit.
@@ -90,11 +92,6 @@ public class kingdomManager : MonoBehaviour
     {
         yield return new WaitUntil(() => !Grid.CheckWall(12, 11));
         int whatUnit = 0; float movementSpeed = 0;
-        // Determines what Unit it is.
-        if (Role == "Captain") { whatUnit = 0; movementSpeed = 0.35f; roamRadius = 2.25f; unitCost = 15; }
-        else if (Role == "Worker") { whatUnit = 1; movementSpeed = 0.5f; roamRadius += 0.5f; unitCost += 2.5f; }
-        else if (Role == "Soldier") { whatUnit = 4; movementSpeed = 0.5f; roamRadius += 0.75f; InvokeRepeating("SubtractGold", 0f, 5f); unitCost += 5; }
-        else if (Role == "Scout") { whatUnit = 3; movementSpeed = 0.75f; roamRadius += 1.0f; InvokeRepeating("SubtractGold", 0f, 7.5f); unitCost += 2.5f; }
         UpdateResources();
         if (roamRadius >= 7) roamRadius = 7;
         if (unitCost > 60) unitCost = 60;
@@ -114,11 +111,8 @@ public class kingdomManager : MonoBehaviour
         Unit.GetComponent<unitManager>().Role = Role;
         Unit.GetChild(0).GetChild(0).GetComponent<TextMeshPro>().text = Role + "\n" + Unit.GetComponent<unitManager>().Name;
         Unit.name = Role + " " + Unit.GetComponent<unitManager>().Name;
-        if (Role == "Captain") { Unit.GetComponent<unitManager>().Health = 7; }
-        else if (Role == "Worker") { Unit.GetComponent<unitManager>().Schedule.Add("Create House"); Unit.GetComponent<unitManager>().Health = 3; }
-        else if (Role == "Scout") { Unit.GetComponent<unitManager>().Schedule.Add("Scout"); Unit.GetComponent<unitManager>().Health = 5; }
-        else if (Role == "Soldier" && Random.value > 0.75f) { Unit.GetComponent<unitManager>().Schedule.Add("Create Tower"); Unit.GetComponent<unitManager>().Health = 7; }
-        // Reveals the Unit slowly, quality of life feature.
+
+        // Reveals the Unit slowly - quality of life feature.
         LeanTween.value(Unit.gameObject, SetAlpha, 0, 1f, 0.5f).setEase(LeanTweenType.easeInOutQuad);
         yield return new WaitForSeconds(0.5f);
         FinishedAlpha();
@@ -139,40 +133,31 @@ public class kingdomManager : MonoBehaviour
     // Creates a new Building.
     public void CreateBuilding(string whatBuilding, Vector2 whatPosition)
     {
-        int WhatBuilding = 0;
-        // Determines what Building it is.
-        if (whatBuilding == "Castle") WhatBuilding = 0;
-        else if (whatBuilding == "Tower") WhatBuilding = 1;
-        else if (whatBuilding == "House") { if (Random.value > 0.7f) WhatBuilding = 2; else WhatBuilding = 3; }
-        else if (whatBuilding == "Research") WhatBuilding = 13;
-        else if (whatBuilding == "Farm") WhatBuilding = 14;
-        else if (whatBuilding == "Random") WhatBuilding = Random.Range(5, 13);
         // Creates the Prefab and updates its values.
-        Transform Building = Instantiate(buildingPrefabs[WhatBuilding]) as Transform;
+        Transform Building = Instantiate(buildingPrefabs[0]) as Transform;
         Building.position = new Vector3(whatPosition.x, 0, whatPosition.y);
         Building.parent = GameObject.Find("Buildings").transform;
         Building.name = whatPosition.x + "," + whatPosition.y + " " + whatBuilding;
         Grid.SetWall(Mathf.RoundToInt(whatPosition.x), Mathf.RoundToInt(whatPosition.y));
         Buildings.Add(Building);
         // If its a Castle, set the initial variables to call them later.
-        if (whatBuilding == "Castle")
+        switch (whatBuilding)
         {
-            ScienceFill = Building.GetChild(1).GetChild(0).GetChild(0).GetComponent<RectTransform>();
-            PublicFill = Building.GetChild(1).GetChild(1).GetChild(0).GetComponent<RectTransform>();
-            MilitaryFill = Building.GetChild(1).GetChild(2).GetChild(0).GetComponent<RectTransform>();
-            GoldFill = Building.GetChild(1).GetChild(3).GetChild(0).GetComponent<RectTransform>();
-        }
-        else if (whatBuilding == "Research") { ResearchBuilding = Building; InvokeRepeating("SubtractScience", 0f, 5f); }
-        else if (whatBuilding == "Farm")
-        {
-            Resources.Add(Building.GetChild(0).GetComponent<ResourceManager>());
-            Building.GetChild(0).GetComponent<ResourceManager>().Grid = Grid;
-            Building.GetChild(0).GetComponent<ResourceManager>().Position = new Vector3(whatPosition.x, 0, whatPosition.y - 1);
-            Building.GetChild(0).GetComponent<ResourceManager>().StartCoroutine(Building.GetChild(0).GetComponent<ResourceManager>().Gathered());
+            case "Castle":
+                ReligionFill = Building.GetChild(1).GetChild(0).GetChild(0).GetComponent<RectTransform>();
+                PublicFill = Building.GetChild(1).GetChild(1).GetChild(0).GetComponent<RectTransform>();
+                MilitaryFill = Building.GetChild(1).GetChild(2).GetChild(0).GetComponent<RectTransform>();
+                GoldFill = Building.GetChild(1).GetChild(3).GetChild(0).GetComponent<RectTransform>();
+                break;
+            case "Farm":
+                Resources.Add(Building.GetChild(0).GetComponent<ResourceManager>());
+                Building.GetChild(0).GetComponent<ResourceManager>().Grid = Grid;
+                Building.GetChild(0).GetComponent<ResourceManager>().Position = new Vector3(whatPosition.x, 0, whatPosition.y - 1);
+                Building.GetChild(0).GetComponent<ResourceManager>().StartCoroutine(Building.GetChild(0).GetComponent<ResourceManager>().Gathered());
+                break;
         }
         // Creates a Road underneath all these buildings.
-        if (WhatBuilding == 0 || WhatBuilding == 1 || WhatBuilding == 2  || WhatBuilding == 8 || WhatBuilding == 9  || WhatBuilding == 11 || WhatBuilding == 13)
-            StartCoroutine(CreateRoads(whatPosition));
+        StartCoroutine(CreateRoads(whatPosition));
     }
     IEnumerator CreateRoads(Vector2 whatPosition)
     {        
@@ -218,16 +203,6 @@ public class kingdomManager : MonoBehaviour
                 yield return null;
             }
         }
-        // Updates visuals for all the Road transforms after it creates them.
-        for (int i = 0; i < Roads.Count; i++)
-        {
-            if (Roads[i] != null) UpdateRoad(Roads[i]);
-        }
-        yield return new WaitForSeconds(2.5f);
-        for (int i = 0; i < CreatedRoads.Count; i++)
-        {
-            if (CreatedRoads[i] != null) CreatedRoads[i].GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 1f, 1f);
-        }
     }
     Transform CreateRoad(int x, int y, bool Building, bool BuildingEntrance)
     {
@@ -242,6 +217,7 @@ public class kingdomManager : MonoBehaviour
             else Grid.SetRoad(x, y);
             Road.GetComponent<RoadManager>().BuildingEntrance = BuildingEntrance;
             Roads.Add(Road);
+            LeanTween.alpha(Road.gameObject, 0.15f, 2.5f).setEase(LeanTweenType.easeInOutQuad);
             return Road;
         }
         // Theres already a road here so locate it in the Roads list.
@@ -259,119 +235,26 @@ public class kingdomManager : MonoBehaviour
             return null;
         }
     }
-    // Loops through every road value and update its visuals based on the other roads around it.
-    void UpdateRoad(Transform Road)
-    {
-        int x = Mathf.RoundToInt(Road.position.x); int y = Mathf.RoundToInt(Road.position.z);
-        // If the road is on top of a Building.
-        if (Road.GetComponent<RoadManager>().Building) Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[1];
-        // If the road has no other roads near it assume theres one directly above it for BuildingEntrances.
-        else if (!Grid.CheckRoad(x, y + 1) && !Grid.CheckRoad(x, y - 1) && !Grid.CheckRoad(x + 1, y) && !Grid.CheckRoad(x - 1, y))
-        {
-            if (Road.GetComponent<RoadManager>().BuildingEntrance) Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[0];
-        }
-        // If there is a road to the left and to the right.
-        else if (!Grid.CheckRoad(x, y + 1) && !Grid.CheckRoad(x, y - 1) && Grid.CheckRoad(x + 1, y) && Grid.CheckRoad(x - 1, y))
-        {
-            if (Road.GetComponent<RoadManager>().BuildingEntrance) Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[11];
-            else Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[5];
-        }
-        // If there is a road to the left, right, and directly above.
-        else if (Grid.CheckRoad(x, y + 1) && !Grid.CheckRoad(x, y - 1) && Grid.CheckRoad(x + 1, y) && Grid.CheckRoad(x - 1, y))
-        {
-            Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[11];
-        }
-        // If there is a road above and below.
-        else if (Grid.CheckRoad(x, y + 1) && Grid.CheckRoad(x, y - 1) && !Grid.CheckRoad(x + 1, y) && !Grid.CheckRoad(x - 1, y))
-        {
-            Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[4];
-        }
-        // If the road has no road above it but one directly below assume its both ways for BuildingEntrances.
-        else if (!Grid.CheckRoad(x, y + 1) && Grid.CheckRoad(x, y - 1) && !Grid.CheckRoad(x + 1, y) && !Grid.CheckRoad(x - 1, y))
-        {
-            if (Road.GetComponent<RoadManager>().BuildingEntrance) Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[4];
-        }
-        // If the road has one above it, to the right and below.
-        else if (Grid.CheckRoad(x, y + 1) && Grid.CheckRoad(x, y - 1) && Grid.CheckRoad(x + 1, y) && !Grid.CheckRoad(x - 1, y))
-        {
-            Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[12];
-        }
-        // If the road has one above it, to the left and below.
-        else if (Grid.CheckRoad(x, y + 1) && Grid.CheckRoad(x, y - 1) && !Grid.CheckRoad(x + 1, y) && Grid.CheckRoad(x - 1, y))
-        {
-            Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[13];
-        }
-        // If the road goes to the right and below.
-        else if (!Grid.CheckRoad(x, y + 1) && Grid.CheckRoad(x, y - 1) && Grid.CheckRoad(x + 1, y) && !Grid.CheckRoad(x - 1, y))
-        {
-            if (Road.GetComponent<RoadManager>().BuildingEntrance) Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[12];
-            else Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[10];
-        }
-        // If the road goes to the left and below.
-        else if (!Grid.CheckRoad(x, y + 1) && Grid.CheckRoad(x, y - 1) && !Grid.CheckRoad(x + 1, y) && Grid.CheckRoad(x - 1, y))
-        {
-            if (Road.GetComponent<RoadManager>().BuildingEntrance) Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[13];
-            else Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[7];
-        }
-        // If the road has one above it and to the right.
-        else if (Grid.CheckRoad(x, y + 1) && !Grid.CheckRoad(x, y - 1) && Grid.CheckRoad(x + 1, y) && !Grid.CheckRoad(x - 1, y))
-        {
-            Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[9];
-        }
-        // If the road has one above it and to the left.
-        else if (Grid.CheckRoad(x, y + 1) && !Grid.CheckRoad(x, y - 1) && !Grid.CheckRoad(x + 1, y) && Grid.CheckRoad(x - 1, y))
-        {
-            Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[8];
-        }
-        // If the road has no road above it but one to the right assume its both ways for BuildingEntrances.
-        else if (!Grid.CheckRoad(x, y + 1) && !Grid.CheckRoad(x, y - 1) && Grid.CheckRoad(x + 1, y) && !Grid.CheckRoad(x - 1, y))
-        {
-            if (Road.GetComponent<RoadManager>().BuildingEntrance) Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[9];
-        }
-        // If the road has no road above it but one to the left assume its both ways for BuildingEntrances.
-        else if (!Grid.CheckRoad(x, y + 1) && !Grid.CheckRoad(x, y - 1) && !Grid.CheckRoad(x + 1, y) && Grid.CheckRoad(x - 1, y))
-        {
-            if (Road.GetComponent<RoadManager>().BuildingEntrance) Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[8];
-        }
-        // If there is a road in every direction apart from the top.
-        else if (!Grid.CheckRoad(x, y + 1) && Grid.CheckRoad(x, y - 1) && Grid.CheckRoad(x + 1, y) && Grid.CheckRoad(x - 1, y))
-        {
-            if (Road.GetComponent<RoadManager>().BuildingEntrance) Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[6];
-            else Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[14];
-        }
-        // If there is a road on every direction.
-        else if (Grid.CheckRoad(x, y + 1) && Grid.CheckRoad(x, y - 1) && Grid.CheckRoad(x + 1, y) && Grid.CheckRoad(x - 1, y))
-        {
-            Road.GetComponent<SpriteRenderer>().sprite = roadPrefabs[6];
-        }
-
-        // Slowly fades in the various Sprites.
-        LeanTween.alpha(Road.gameObject, 1, 2.5f).setEase(LeanTweenType.easeInOutQuad);
-    }
-    // Runs this check every second to see if the Captain has enough Gold to make a new Unit.
-    void FindCaptain()
+    // Runs this check every second to see if the King has enough Gold to make a new Unit.
+    void FindKing()
     {
         // If theres a lot of Gold, create a Unit - when they build a House they increase Public.
         if (!Units[0].onSchedule)
         {
-            if (Gold >= unitCost && Random.value > 0.5f && Public <= 75)
+            switch (Random.value)
             {
-                // Can't make Units once above a certain amount of Public.
-                Units[0].Schedule.Add("Create Unit Worker");
-                Gold -= unitCost; Public += 25;
-            }
-            // Else if Public is above Military, create Military.
-            else if (Gold >= 40 && Random.value > 0.5f && Public > Military)
-            {
-                if (Random.value > 0.85f) { Units[0].Schedule.Add("Create Unit Scout"); }
-                else Units[0].Schedule.Add("Create Unit Soldier");
-                Gold -= 25; Public -= 35; Military += 25;
-            }
-            // If there is no Research, build a Research.
-            else if (ResearchBuilding == null && Units.Count > 3 && Science <= 15)
-            {
-                Science += 25;
-                Units[0].Schedule.Add("Create Research");
+                case 0.1f:
+                    // Can't make Units once above a certain amount of Public.
+                    if (Public >= 75) break;
+                    Units[0].Schedule.Add("Create Unit Worker");
+                    Gold -= unitCost; Public += 25;
+                    break;
+                case 0.2f:
+                    // Can't make Units once above a certain amount of Public.
+                    if (Random.value > 0.85f) { Units[0].Schedule.Add("Create Unit Scout"); }
+                    else Units[0].Schedule.Add("Create Unit Knight");
+                    Gold -= 25; Public -= 35; Military += 25;
+                    break;
             }
         }
     }
@@ -386,87 +269,84 @@ public class kingdomManager : MonoBehaviour
                 if (Gold <= 10f) { Units[i].Schedule.Add("Create Farm"); Gold += 15; }
                 // If that Unit does not currently have a Schedule and the Town needs Gold, go gather.
                 else if (Gold <= 50f && Random.value > 0.5f && Resources.Count > 15) Units[i].Schedule.Add("Gather");
-                // If the Military is larger than Science, then go Research.
-                else if (Military > Science && Science < 50f && ResearchBuilding != null && Random.value > 0.25f && isResearching < 10)
+                // If the Military is larger than Religion, then go Pray.
+                else if (Military > Religion && Religion < 50f && Church != null && Random.value > 0.25f && isPraying < 10)
                 {
-                    Units[i].Schedule.Add("Research");
-                    isResearching++;
-                    if (isResearching == 1) StartCoroutine(startResearching());
+                    Units[i].Schedule.Add("Pray");
+                    isPraying++;
+                    if (isPraying == 1) StartCoroutine(startPraying());
                 }
                 // Otherwise make one of the other Buildings to increase Economy using Military might.
                 else if (Military > 40 && Random.value > 0.25f) { Military -= 25; Units[i].Schedule.Add("Create Random"); }
             }
         }
     }
-    public void Researching(Transform researchingUnit)
+    public void Praying(Transform prayingUnit)
     {
-        researchUnits.Add(researchingUnit);
-        researchingUnit.gameObject.SetActive(false);
-        Grid.RemoveWall(Mathf.RoundToInt(ResearchBuilding.transform.position.x), Mathf.RoundToInt(ResearchBuilding.transform.position.z - 1));
+        churchUnits.Add(prayingUnit);
+        prayingUnit.gameObject.SetActive(false);
+        Grid.RemoveWall(Mathf.RoundToInt(Church.transform.position.x), Mathf.RoundToInt(Church.transform.position.z - 1));
     }
-    // Starts Research, once time is over lets out each Unit one by one.
-    IEnumerator startResearching()
+    // Starts Praying, once time is over lets out each Unit one by one.
+    IEnumerator startPraying()
     {
         UpdateResources();
-        CancelInvoke("SubtractScience");
-        yield return new WaitUntil(() => researchUnits.Count > 0);
-        ResearchBuilding.GetChild(1).gameObject.SetActive(true);
+        CancelInvoke("SubtractReligion");
+        yield return new WaitUntil(() => churchUnits.Count > 0);
+        Church.GetChild(1).gameObject.SetActive(true);
+        ShowText(" Start Mass", "[Religion++, Military--]");
         yield return new WaitForSeconds(30f);
-        Science = 100;
-        isResearching = 10;
+        Religion = 100;
+        isPraying = 10;
         yield return new WaitForSeconds(Random.Range(60f, 95f));
-        Grid.RemoveWall(Mathf.RoundToInt(ResearchBuilding.transform.position.x), Mathf.RoundToInt(ResearchBuilding.transform.position.z - 1));
-        while (researchUnits.Count != 0)
+        Grid.RemoveWall(Mathf.RoundToInt(Church.transform.position.x), Mathf.RoundToInt(Church.transform.position.z - 1));
+        while (churchUnits.Count != 0)
         {
-            // Waits until the entrance to the Research is empty to start releasing them.
-            yield return new WaitUntil(() => !Grid.CheckWall(Mathf.RoundToInt(ResearchBuilding.transform.position.x), Mathf.RoundToInt(ResearchBuilding.transform.position.z - 1)));
+            // Waits until the entrance to the Church is empty to start releasing them.
+            yield return new WaitUntil(() => !Grid.CheckWall(Mathf.RoundToInt(Church.transform.position.x), Mathf.RoundToInt(Church.transform.position.z - 1)));
             // Gives the recently released Unit time to move.
-            researchUnits[0].gameObject.SetActive(true);
-            researchUnits[0].GetComponent<unitManager>().Schedule.RemoveAt(0); researchUnits[0].GetComponent<unitManager>().onSchedule = false;
-            yield return new WaitUntil(() => researchUnits[0].GetComponent<unitManager>().Model.GetComponent<AIManager>().isMoving);
-            researchUnits.RemoveAt(0);
+            churchUnits[0].gameObject.SetActive(true);
+            churchUnits[0].GetComponent<unitManager>().Schedule.RemoveAt(0); churchUnits[0].GetComponent<unitManager>().onSchedule = false;
+            yield return new WaitUntil(() => churchUnits[0].GetComponent<unitManager>().Model.GetComponent<AIManager>().isMoving);
+            churchUnits.RemoveAt(0);
             yield return null;
         }
-        isResearching = 0;
-        InvokeRepeating("SubtractScience", 0f, 5f);
-        ResearchBuilding.GetChild(1).gameObject.SetActive(false);
+        isPraying = 0;
+        InvokeRepeating("SubtractReligion", 0f, 5f);
+        Church.GetChild(1).gameObject.SetActive(false);
     }
-    void FindSoldiers()
+    void FindKnights()
     {
         for (int i = 1; i < Units.Count; i++)
         {
-            if (Units[i].Role == "Soldier" && !Units[i].onSchedule)
+            if (Units[i].Role == "Knight" && !Units[i].onSchedule)
             {
                 // If the Castle has no guards, prioritise Guards with a random check to choose left or right.
-                if (Random.value > 0.5f && !Grid.CheckWall(Mathf.RoundToInt(Buildings[0].position.x + 1), Mathf.RoundToInt(Buildings[0].position.z - 1)))
+                switch (Random.value)
                 {
-                    // If that Unit does not currently have a Schedule defend Castle.
-                    Units[i].Schedule.Add("Guard " + Mathf.RoundToInt(Buildings[0].position.x + 1) + "," + Mathf.RoundToInt(Buildings[0].position.z - 1));
-                }
-                else if (Random.value > 0.5f && !Grid.CheckWall(Mathf.RoundToInt(Buildings[0].position.x - 1), Mathf.RoundToInt(Buildings[0].position.z - 1)))
-                {
-                    // If that Unit does not currently have a Schedule defend Castle.
-                    Units[i].Schedule.Add("Guard " + Mathf.RoundToInt(Buildings[0].position.x - 1) + "," + Mathf.RoundToInt(Buildings[0].position.z - 1));
-                }
-                // Otherwise guard a random building for a while.
-                else if (Random.value > 0.75f)
-                {
-                    Transform Building = null;
-                    Building = Buildings[Random.Range(0, Buildings.Count)];
-
-                    while (Grid.CheckWall(Mathf.RoundToInt(Building.position.x - 1), Mathf.RoundToInt(Building.position.z - 1))
-                           && Grid.CheckWall(Mathf.RoundToInt(Building.position.x + 1), Mathf.RoundToInt(Building.position.z - 1)))
-                    {
+                    case 0.1f:
+                        Units[i].Schedule.Add("Guard " + Mathf.RoundToInt(Buildings[0].position.x + 1) + "," + Mathf.RoundToInt(Buildings[0].position.z - 1));
+                        break;
+                    case 0.2f:
+                        Units[i].Schedule.Add("Guard " + Mathf.RoundToInt(Buildings[0].position.x - 1) + "," + Mathf.RoundToInt(Buildings[0].position.z - 1));
+                        break;
+                    case 0.3f:
+                        Transform Building = null;
                         Building = Buildings[Random.Range(0, Buildings.Count)];
-                        return;
-                    }
-                    if (Building != null)
-                    {
-                        if (!Grid.CheckWall(Mathf.RoundToInt(Building.position.x - 1), Mathf.RoundToInt(Building.position.z - 1)))
-                            Units[i].Schedule.Add("Guard " + Mathf.RoundToInt(Building.position.x - 1) + "," + Mathf.RoundToInt(Building.position.z - 1));
-                        else
-                            Units[i].Schedule.Add("Guard " + Mathf.RoundToInt(Building.position.x + 1) + "," + Mathf.RoundToInt(Building.position.z - 1));
-                    }
+                        while (Grid.CheckWall(Mathf.RoundToInt(Building.position.x - 1), Mathf.RoundToInt(Building.position.z - 1))
+                               && Grid.CheckWall(Mathf.RoundToInt(Building.position.x + 1), Mathf.RoundToInt(Building.position.z - 1)))
+                        {
+                            Building = Buildings[Random.Range(0, Buildings.Count)];
+                            return;
+                        }
+                        if (Building != null)
+                        {
+                            if (!Grid.CheckWall(Mathf.RoundToInt(Building.position.x - 1), Mathf.RoundToInt(Building.position.z - 1)))
+                                Units[i].Schedule.Add("Guard " + Mathf.RoundToInt(Building.position.x - 1) + "," + Mathf.RoundToInt(Building.position.z - 1));
+                            else
+                                Units[i].Schedule.Add("Guard " + Mathf.RoundToInt(Building.position.x + 1) + "," + Mathf.RoundToInt(Building.position.z - 1));
+                        }
+                        break;
                 }
             }
             // Allows Scouts to roam.
@@ -516,7 +396,25 @@ public class kingdomManager : MonoBehaviour
         // And loops again to keep spawning opponents.
         StartCoroutine(CreateEnemies());
     }
-    // Once the Captain is dead, start the game over.
+    // Create a Text based on each action.
+    public void ShowText(string text, string cost)
+    {
+        if (Actions.transform.GetChild(0).childCount > 9) Destroy(Actions.transform.GetChild(0).GetChild(0).gameObject);
+        StartCoroutine(showText(text, cost));
+    }
+    IEnumerator showText(string text, string cost)
+    {
+        GameObject tempChat = Instantiate(gameText);
+        LeanTween.alphaCanvas(tempChat.GetComponent<CanvasGroup>(), 1, 5f).setEase(LeanTweenType.easeInQuad);
+        tempChat.transform.GetChild(0).GetComponent<TextMeshProUGUI>().text = text;
+        tempChat.transform.GetChild(1).GetComponent<TextMeshProUGUI>().text = cost;
+        tempChat.transform.SetParent(Actions.transform.GetChild(0), false);
+        yield return new WaitForSeconds(25f);
+        if (tempChat != null) LeanTween.alphaCanvas(tempChat.GetComponent<CanvasGroup>(), 0, 2.5f).setEase(LeanTweenType.easeInQuad);
+        yield return new WaitForSeconds(3f);
+        if (tempChat != null) Destroy(tempChat);
+    }
+    // Once the King is dead, start the game over.
     public IEnumerator GameOver()
     {
         GameObject.Find("Canvas").GetComponent<titleScreen>().Loaded = false; Time.timeScale = 0.5f; 

@@ -1,12 +1,12 @@
-﻿// Creates the Pathfinding Grid to be accessed and controlled.
+﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-namespace Pathfinding
+namespace AlanZucconi.AI.PF
 {
     public class Grid2D : IPathfinding<Vector2Int>
     {
-        // The directions in which you can move in a 2D grid.
+        // The directions in which you can move in a 2D grid
         private static Vector2Int[] Directions =
         {
             Vector2Int.up,
@@ -15,7 +15,8 @@ namespace Pathfinding
             Vector2Int.left
         };
 
-        // The grid data.
+        // The actual grid data
+        // Wall[x, y] = true  ---> cannot walk through
         private bool[,] Wall;
         private bool[,] Road;
 
@@ -23,8 +24,10 @@ namespace Pathfinding
         {
             Wall = new bool[size.x, size.y];
             Road = new bool[size.x, size.y];
+            // Automatically initialised to false:
+            // all grid is accessible
         }
-        // Sets or Removes all the bools.
+
         public void SetWall (Vector2Int position)
         {
             Wall[position.x, position.y] = true;
@@ -46,10 +49,10 @@ namespace Pathfinding
             return Road[position.x, position.y];
         }
 
-        // Considered wall if out of bounds.
+        // Considered wall if out of bounds
         private bool IsFree (Vector2Int position)
         {
-            // Out of bounds: it is a wall.
+            // Out of bounds: it is a wall
             if (position.x < 0 || position.x >= Wall.GetLength(0))
                 return false;
             if (position.y < 0 || position.y >= Wall.GetLength(1))
@@ -60,7 +63,7 @@ namespace Pathfinding
 
         public IEnumerable<Vector2Int> Outgoing (Vector2Int position)
         {
-            // Out of bounds.
+            // Out of bounds
             if (position.x < 0 || position.x >= Wall.GetLength(0))
                 yield break;
             if (position.y < 0 || position.y >= Wall.GetLength(1))

@@ -59,6 +59,33 @@ public class AIManager : MonoBehaviour
             // Upon reaching the destination, subtract one from Paths and repeat.
             if (Vector3.Distance(transform.position, new Vector3(Path[0].x, 0.5f, Path[0].y)) < 0.001f)
             {
+                // Makes that road slightly more visible each time.
+                Transform Building = null; int pathY = Path[0].y + 1;
+                for (int i = 0; i < Grid.Kingdom.Roads.Count; i++)
+                {
+                    if (Grid.Kingdom.Roads[i].name == Path[0].x + "," + pathY) Building = Grid.Kingdom.Roads[i];
+                    else if (Grid.Kingdom.Roads[i].name == Path[0].x + "," + Path[0].y)
+                    {
+                        float alphaValue = Grid.Kingdom.Roads[i].GetComponent<SpriteRenderer>().color.a + 0.02f;
+                        if (alphaValue > 0.6f) alphaValue = 0.6f;
+                        LeanTween.alpha(Grid.Kingdom.Roads[i].gameObject, alphaValue, 0.5f).setEase(LeanTweenType.easeInOutQuad);
+                        if (Grid.Kingdom.Roads[i].GetComponent<RoadManager>().BuildingEntrance && Building != null)
+                            LeanTween.alpha(Building.gameObject, alphaValue, 0.5f).setEase(LeanTweenType.easeInOutQuad);
+                        break;
+                    }
+                }
+                /*
+                for (int i = 0; i < Grid.Planes.childCount; i++)
+                {
+                    if (Grid.Planes.GetChild(i).name == Path[0].x + "," + Path[0].y)
+                    {
+                        float alphaValue = Grid.Planes.GetChild(i).GetChild(0).GetComponent<SpriteRenderer>().color.a + 0.0075f;
+                        if (alphaValue > 0.2f) alphaValue = 0.2f;
+                        LeanTween.alpha(Grid.Planes.GetChild(i).GetChild(0).gameObject, alphaValue, 0.5f).setEase(LeanTweenType.easeInOutQuad);
+                        break;
+                    }
+                }
+                */
                 Path.Remove(Path[0]);
             }
             yield return null;

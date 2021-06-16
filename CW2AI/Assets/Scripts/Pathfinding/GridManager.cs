@@ -1,11 +1,12 @@
 ﻿// Holds all Pathfinding variables and instantiates the AI after the PCG is finished.
 using System.Collections.Generic;
 using UnityEngine;
-using Pathfinding;
+using AlanZucconi.AI.PF;
 
 public class GridManager : MonoBehaviour
 {
     Grid2D Grid;
+    public Transform Planes;
     public titleScreen TitleScreen;
     public kingdomManager Kingdom;
     public int worldSize = 50;
