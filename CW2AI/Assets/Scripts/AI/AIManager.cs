@@ -74,18 +74,6 @@ public class AIManager : MonoBehaviour
                         break;
                     }
                 }
-                /*
-                for (int i = 0; i < Grid.Planes.childCount; i++)
-                {
-                    if (Grid.Planes.GetChild(i).name == Path[0].x + "," + Path[0].y)
-                    {
-                        float alphaValue = Grid.Planes.GetChild(i).GetChild(0).GetComponent<SpriteRenderer>().color.a + 0.0075f;
-                        if (alphaValue > 0.2f) alphaValue = 0.2f;
-                        LeanTween.alpha(Grid.Planes.GetChild(i).GetChild(0).gameObject, alphaValue, 0.5f).setEase(LeanTweenType.easeInOutQuad);
-                        break;
-                    }
-                }
-                */
                 Path.Remove(Path[0]);
             }
             yield return null;
