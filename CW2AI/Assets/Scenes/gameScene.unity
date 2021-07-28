@@ -17780,6 +17780,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd0bb435ab8ba4c41931585657d8e342, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  Grid: {fileID: 1290198437}
   cameraScript: {fileID: 1516420310}
   grassPrefab:
   - {fileID: 9150366200518818575, guid: ba9f5859b072a5f4faf4dbef1b265006, type: 3}
@@ -18784,7 +18785,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f625fa8263ccaf4fa1430a649c27b21, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Grid: {fileID: 0}
+  Grid: {fileID: 1290198437}
   GameOverObjectTitle: {fileID: 662391802}
   GameOverObjectSubTitle: {fileID: 1181592970}
   Actions: {fileID: 1743247240}
@@ -18814,24 +18815,6 @@ MonoBehaviour:
   - {fileID: 1754822715032723723, guid: 6bdeec909da49c649acaab53f21d198e, type: 3}
   - {fileID: 7940372909356524044, guid: 0fa35729f8d932c4e8bf419e177c9c67, type: 3}
   - {fileID: 7561256411252054099, guid: 376e58d1705db4e478f08b449878414f, type: 3}
-  roadPrefab: {fileID: 4868762303122357092, guid: c0dec77372f128b4882b09adc7cf6cbd,
-    type: 3}
-  roadPrefabs:
-  - {fileID: 9054171525988303666, guid: 1b874f710feb3ae40b03e382108e9c28, type: 3}
-  - {fileID: -8293403657053772933, guid: 1b874f710feb3ae40b03e382108e9c28, type: 3}
-  - {fileID: 9142464063757714082, guid: 1b874f710feb3ae40b03e382108e9c28, type: 3}
-  - {fileID: -8287002325617540175, guid: 1b874f710feb3ae40b03e382108e9c28, type: 3}
-  - {fileID: -8070390018859100845, guid: 1b874f710feb3ae40b03e382108e9c28, type: 3}
-  - {fileID: 7383613935164766819, guid: 1b874f710feb3ae40b03e382108e9c28, type: 3}
-  - {fileID: 7728347407747499715, guid: 1b874f710feb3ae40b03e382108e9c28, type: 3}
-  - {fileID: 7971831627791238314, guid: 1b874f710feb3ae40b03e382108e9c28, type: 3}
-  - {fileID: -4253176463021532768, guid: 1b874f710feb3ae40b03e382108e9c28, type: 3}
-  - {fileID: 7848453039339196631, guid: 1b874f710feb3ae40b03e382108e9c28, type: 3}
-  - {fileID: -5652311689140751528, guid: 1b874f710feb3ae40b03e382108e9c28, type: 3}
-  - {fileID: 5458275667509189523, guid: 1b874f710feb3ae40b03e382108e9c28, type: 3}
-  - {fileID: 4239768684836547128, guid: 1b874f710feb3ae40b03e382108e9c28, type: 3}
-  - {fileID: 4755982899240913549, guid: 1b874f710feb3ae40b03e382108e9c28, type: 3}
-  - {fileID: 5384894206599798141, guid: 1b874f710feb3ae40b03e382108e9c28, type: 3}
   unitModelPrefabs:
   - {fileID: -4139907103933228180, guid: e52ac52365443dc4d9721944e91726fe, type: 3}
   - {fileID: -176036266048183331, guid: e52ac52365443dc4d9721944e91726fe, type: 3}
@@ -25896,7 +25879,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   panSpeed: 5
-  panBorderThickness: 0.025
 --- !u!1 &1517365565
 GameObject:
   m_ObjectHideFlags: 0

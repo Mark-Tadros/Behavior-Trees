@@ -1,4 +1,4 @@
-﻿// Works alongside the CameraStop.cs. Controls Rotation. Works alongside CameraStop.cs.
+﻿// Works alongside the CameraStop.cs. Controls Rotation.
 using UnityEngine;
 
 public class cameraMove : MonoBehaviour
@@ -8,7 +8,6 @@ public class cameraMove : MonoBehaviour
     public Camera camera3; public Camera camera4;
 
     public Transform cameraTransform;
-
     [HideInInspector] public Vector3 _cameraOffset;
 
     void Start()
@@ -20,9 +19,7 @@ public class cameraMove : MonoBehaviour
     void LateUpdate()
     {
         Vector3 newPos = cameraTransform.position + _cameraOffset;
-
-        transform.position = newPos;
-        
+        transform.position = newPos;        
         camera1.GetComponent<portalCamera>().Update(); camera2.GetComponent<portalCamera>().Update();
         camera3.GetComponent<portalCamera>().Update(); camera4.GetComponent<portalCamera>().Update();
     }

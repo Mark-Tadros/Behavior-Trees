@@ -8,7 +8,7 @@ public class unitManager : MonoBehaviour
 {
     [HideInInspector] public kingdomManager Kingdom;
     public GameObject Model;
-    AIManager AI;
+    public AIManager AI;
     public Transform Target;
     public string Name;
     public float Health;
@@ -21,13 +21,8 @@ public class unitManager : MonoBehaviour
 
     public Transform Enemy;
 
-    void Start()
-    {
-        AI = Model.GetComponent<AIManager>();
-        // Start checking that Units schedule every tick.
-        InvokeRepeating("CheckSchedule", 0.25f, 2.5f);
-    }
-    // Runs every Second to check if any commands are currently in the Schedule;
+    // Calls an incremental check to control the individual decisions of the AI.
+    void Start() { InvokeRepeating("CheckSchedule", 0.25f, 2.5f); }
     public void CheckSchedule()
     {
         // Small check to reset AI if needed.
@@ -36,28 +31,24 @@ public class unitManager : MonoBehaviour
             CancelInvoke("CheckSchedule");
             return;
         }
-        else if (Schedule.Count > 0 && !onSchedule)
+        else if (!gameObject.activeSelf /* Praying */ || Status.text == "defending" || Status.text == "attacking") return;
+        
+        if (Schedule.Count > 0 && !onSchedule)
         {
-            Debug.Log(Schedule[0]);
-            // Determines what Task was set and carries it out.
-            switch (Schedule[0])
+            string currentSchedule = Schedule[0];
+            if (currentSchedule.Contains("Create Unit")) currentSchedule = "Create Unit";
+            else if (currentSchedule.Contains("Create")) currentSchedule = "Create";
+            else if (currentSchedule.Contains("Guard")) currentSchedule = "Guard";
+            // Determines what task that AI is currently on and carries it out.
+            switch (currentSchedule)
             {
                 case "Create Unit":
                     string whatUnit = Schedule[0].Replace("Create Unit ", "");
                     StartCoroutine(CreateUnit(whatUnit));
                     break;
-                case "Create Building":
+                case "Create":
                     string whatBuilding = Schedule[0].Replace("Create ", "");
                     StartCoroutine(CreateBuilding(whatBuilding));
-                    break;
-                case "Gather":
-                    StartCoroutine(Gather());
-                    break;
-                case "Pray":
-                    StartCoroutine(Pray());
-                    break;
-                case "Scout":
-                    StartCoroutine(Scout());
                     break;
                 case "Guard":
                     // Recieves the positions its required to stand Guard.
@@ -73,10 +64,12 @@ public class unitManager : MonoBehaviour
                     if (Kingdom.Grid.CheckWall(int.Parse(x), int.Parse(y))) { Schedule.RemoveAt(0); onSchedule = false; }
                     else StartCoroutine(Guard(int.Parse(x), int.Parse(y)));
                     break;
-                case "Raider Roam": 
-                    if (Status.text != "wandering" && Status.text != "attacking") StartCoroutine(RaiderRoam());
+                case "Raider Roam":
+                    if (Status.text == "wandering" || Status.text == "attacking") break;
+                    StartCoroutine(RaiderRoam());
                     break;
-                case "Wandering":
+                case "wandering":
+                    if (Kingdom.Units.Count <= 0) break;
                     // Runs a check to see if any Units are nearby in order to attack them.
                     Enemy = null;
                     float minDistance = Mathf.Infinity;
@@ -92,7 +85,6 @@ public class unitManager : MonoBehaviour
                             minDistance = Distance;
                         }
                     }
-                    //if (Kingdom.Units.Count == 1) Enemy = Kingdom.Units[0].transform;
                     // Start the attacking process.
                     if (Enemy != null)
                     {
@@ -100,50 +92,44 @@ public class unitManager : MonoBehaviour
                         StartCoroutine(Attacking());
                     }
                     break;
+                default:
+                    StartCoroutine(currentSchedule);
+                    break;
             }
         }
-        // Continues roaming if there are no more Tasks.
+        // Continues roaming if there are no Tasks.
         else if (!onSchedule && Status.text != "waiting") StartCoroutine(Roam());
-    }
-    IEnumerator Bugged()
-    {
-        yield return new WaitForSeconds(25f);
-        if (Status.text == "thinking") Status.text = "";
     }
     // Allows the Unit to slowly and randomly roam around the map if Schedule is empty.
     IEnumerator Roam()
     {
         Status.text = "waiting";
-        // Starts the loop to continue Roaming until something breaks it.
-        while (!onSchedule)
+        // Starts the loop to repeat Roaming until something breaks it.
+        float updatedRadius = Kingdom.roamRadius;
+        if (Role == "King") { if (updatedRadius > 3) updatedRadius = 3; yield return new WaitForSeconds(3.5f); }
+        // Selects a random radius between the roam radius and the Castle.
+        int x = Random.Range(Mathf.RoundToInt(Kingdom.Buildings[0].position.x - updatedRadius), Mathf.RoundToInt(Kingdom.Buildings[0].position.x + updatedRadius));
+        int y = Random.Range(Mathf.RoundToInt(Kingdom.Buildings[0].position.z - (updatedRadius * 1.5f)), Mathf.RoundToInt(Kingdom.Buildings[0].position.z + (updatedRadius * 0.5f)));
+
+        // Makes sure the roam lands on a position that Unit can currently walk.
+        while (Kingdom.Grid.CheckWall(x, y))
         {
-            float updatedRadius = Kingdom.roamRadius;
-            if (Role == "King") { if (updatedRadius > 3) updatedRadius = 3; yield return new WaitForSeconds(1.5f); }
-            if (onSchedule) yield break;
-            // Selects a random radius between the roam radius and the Castle.
-            int x = Random.Range(Mathf.RoundToInt(Kingdom.Buildings[0].position.x - updatedRadius), Mathf.RoundToInt(Kingdom.Buildings[0].position.x + updatedRadius));
-            int y = Random.Range(Mathf.RoundToInt(Kingdom.Buildings[0].position.z - (updatedRadius * 1.5f)), Mathf.RoundToInt(Kingdom.Buildings[0].position.z + (updatedRadius * 0.5f)));
-
-            // Makes sure the roam lands on a position that Unit can currently walk.
-            while (Kingdom.Grid.CheckWall(x, y))
-            {
-                x = Random.Range(Mathf.RoundToInt(Kingdom.Buildings[0].position.x - updatedRadius), Mathf.RoundToInt(Kingdom.Buildings[0].position.x + updatedRadius));
-                y = Random.Range(Mathf.RoundToInt(Kingdom.Buildings[0].position.z - (updatedRadius * 1.5f)), Mathf.RoundToInt(Kingdom.Buildings[0].position.z + (updatedRadius * 0.5f)));
-                yield return null;
-            }
-
-            if (onSchedule) yield break;
-            Target.position = new Vector3(x, 0.5f, y);
-
-            // Make sure to wait until it starts moving, and then reaches its destination and sometimes plays an Emote.
-            yield return new WaitUntil(() => AI.isMoving || Model.transform.position == new Vector3(Target.transform.position.x, Model.transform.position.y, Target.transform.position.z));
-            yield return new WaitUntil(() => !AI.isMoving);
-            if (onSchedule) yield break;
-            // Shows a emote every couple of times.
-            if (Random.value > 0.9f) ShowEmote(4);
-            yield return new WaitForSeconds(Random.Range(1.5f, 5f));
-            HideEmote();
+            x = Random.Range(Mathf.RoundToInt(Kingdom.Buildings[0].position.x - updatedRadius), Mathf.RoundToInt(Kingdom.Buildings[0].position.x + updatedRadius));
+            y = Random.Range(Mathf.RoundToInt(Kingdom.Buildings[0].position.z - (updatedRadius * 1.5f)), Mathf.RoundToInt(Kingdom.Buildings[0].position.z + (updatedRadius * 0.5f)));
+            yield return null;
         }
+
+        if (onSchedule) yield break;
+        Target.position = new Vector3(x, 0.5f, y);
+
+        // Make sure to wait until it starts moving, and then reaches its destination and sometimes plays an Emote.
+        yield return new WaitUntil(() => AI.isMoving || Model.transform.position == new Vector3(Target.transform.position.x, Model.transform.position.y, Target.transform.position.z));
+        yield return new WaitUntil(() => !AI.isMoving);
+        // Shows a emote every couple of times.
+        if (Random.value > 0.9f) ShowEmote(4);
+        yield return new WaitForSeconds(Random.Range(1.5f, 5f));
+        HideEmote();
+        if (!onSchedule) StartCoroutine(Roam());
     }
     // Creates a Unit;
     IEnumerator CreateUnit(string Role)
@@ -152,7 +138,6 @@ public class unitManager : MonoBehaviour
         // Ensure the Castle entrance is free, before moving to make a Unit.
         yield return new WaitUntil(() => !AI.isMoving);
         Status.text = "thinking";
-        StartCoroutine(Bugged());
         // Waits until the Castle entrance is empty in order to create More, or checks if Unit is currently standing on top of the Castle..
         yield return new WaitUntil(() => !Kingdom.Grid.CheckWall(12, 11) || Target.transform.position == new Vector3(12, Target.transform.position.y, 11) || Status.text == "");
         if (Status.text == "")
@@ -181,7 +166,6 @@ public class unitManager : MonoBehaviour
         // Ensure the Unit is not moving.
         yield return new WaitUntil(() => !AI.isMoving);
         Status.text = "thinking";
-        StartCoroutine(Bugged());
         // Selects a random radius between the roam radius and the Castle.
         int x = Random.Range(Mathf.RoundToInt(Kingdom.Buildings[0].position.x - (Kingdom.roamRadius * 0.75f)), Mathf.RoundToInt(Kingdom.Buildings[0].position.x + (Kingdom.roamRadius * 0.75f)));
         int y = Random.Range(Mathf.RoundToInt(Kingdom.Buildings[0].position.z - ((Kingdom.roamRadius * 0.75f) * 1.5f)), Mathf.RoundToInt(Kingdom.Buildings[0].position.z + ((Kingdom.roamRadius * 0.75f) * 0.5f)));
@@ -189,7 +173,7 @@ public class unitManager : MonoBehaviour
         // Makes sure the spot to move and the spot to place the building are both Empty, and not in front of a Building.
         bool Contains = false;
         for (int i = 0; i < Kingdom.Buildings.Count; i++) { if (x == Kingdom.Buildings[i].position.x && y == Kingdom.Buildings[i].position.z - 2) Contains = true; }
-        while (Kingdom.Grid.CheckWall(x, y) || Kingdom.Grid.CheckWall(x, y + 1) || Contains || x == 12 || x == 0 || y == 0 || x == 24 || y == 24 || Kingdom.Grid.CheckRoad(x, y) || Kingdom.Grid.CheckRoad(x, y + 1))
+        while (Kingdom.Grid.CheckWall(x, y) || Kingdom.Grid.CheckWall(x, y + 1) || Contains || x == 12 || x == 0 || y == 0 || x == 24 || y == 24)
         {
             x = Random.Range(Mathf.RoundToInt(Kingdom.Buildings[0].position.x - (Kingdom.roamRadius * 0.75f)), Mathf.RoundToInt(Kingdom.Buildings[0].position.x + (Kingdom.roamRadius * 0.75f)));
             y = Random.Range(Mathf.RoundToInt(Kingdom.Buildings[0].position.z - ((Kingdom.roamRadius * 0.75f) * 1.5f)), Mathf.RoundToInt(Kingdom.Buildings[0].position.z + ((Kingdom.roamRadius * 0.75f) * 0.5f)));
@@ -221,7 +205,6 @@ public class unitManager : MonoBehaviour
         // Ensure the Unit is not moving.
         yield return new WaitUntil(() => !AI.isMoving);
         Status.text = "thinking";
-        StartCoroutine(Bugged());
         // Picks the closest resource, and removes it from the current list.
         ResourceManager Object = null;
         float minDistance = Mathf.Infinity;
@@ -266,7 +249,6 @@ public class unitManager : MonoBehaviour
         // Ensure the Unit is not moving.
         yield return new WaitUntil(() => !AI.isMoving);
         Status.text = "thinking";
-        StartCoroutine(Bugged());
         // Waits until the Church entrance is empty.
         yield return new WaitUntil(() => !Kingdom.Grid.CheckWall(Mathf.RoundToInt(Kingdom.Church.position.x), Mathf.RoundToInt(Kingdom.Church.position.z - 1))
                                          || Target.transform.position == new Vector3(Mathf.RoundToInt(Kingdom.Church.position.x), Target.transform.position.y, Mathf.RoundToInt(Kingdom.Church.position.z - 1)));
@@ -342,70 +324,42 @@ public class unitManager : MonoBehaviour
         if (Random.value > 0.5f) ShowEmote(3);
         Status.text = "defending";
         Target.transform.position = new Vector3(Model.transform.position.x, Target.transform.position.y, Model.transform.position.z);
-        onSchedule = true; AI.isStuck = false;
+        onSchedule = true;
     }
     // Allows the Unit to slowly and randomly roam around the map if Schedule is empty.
     IEnumerator RaiderRoam()
     {
         Status.text = "wandering";
-        // Starts the loop to continue Roaming until something breaks it.
-        while (!onSchedule)
+        // Selects a random radius between the roam radius and the Castle.
+        int x = Random.Range(1, 24); int y = Random.Range(1, 24);
+
+        // Makes sure the roam lands on a position that Unit can currently walk.
+        while (Kingdom.Grid.CheckWall(x, y))
         {
-            if (onSchedule) yield break;
-            // Selects a random radius between the roam radius and the Castle.
-            int x = Random.Range(1, 24); int y = Random.Range(1, 24);
-
-            // Makes sure the roam lands on a position that Unit can currently walk.
-            while (Kingdom.Grid.CheckWall(x, y))
-            {
-                x = Random.Range(1, 24); y = Random.Range(1, 24);
-                yield return null;
-            }
-
-            if (onSchedule) yield break;
-            Target.position = new Vector3(x, 0.5f, y);
-
-            // Make sure to wait until it starts moving, and then reaches its destination and sometimes plays an Emote.
-            yield return new WaitUntil(() => AI.isMoving || Model.transform.position == new Vector3(Target.transform.position.x, Model.transform.position.y, Target.transform.position.z));
-            yield return new WaitUntil(() => !AI.isMoving);
-            if (onSchedule) yield break;
-            // Shows a emote every couple of times.
-            if (Random.value > 0.5f) ShowEmote(3);
-            yield return new WaitForSeconds(Random.Range(2.5f, 7.5f));
-            HideEmote();
+            x = Random.Range(1, 24); y = Random.Range(1, 24);
+            yield return null;
         }
+
+        if (onSchedule) yield break;
+        Target.position = new Vector3(x, 0.5f, y);
+
+        // Make sure to wait until it starts moving, and then reaches its destination and sometimes plays an Emote.
+        yield return new WaitUntil(() => AI.isMoving || Model.transform.position == new Vector3(Target.transform.position.x, Model.transform.position.y, Target.transform.position.z));
+        yield return new WaitUntil(() => !AI.isMoving);
+        // Shows a emote every couple of times.
+        if (Random.value > 0.5f) ShowEmote(3);
+        yield return new WaitForSeconds(Random.Range(2.5f, 7.5f));
+        HideEmote();
+        if (!onSchedule) StartCoroutine(RaiderRoam());
     }
     IEnumerator Attacking()
     {
         onSchedule = true;
-        Status.text = "attacking";
-
-        // Calculates the closest position to the Enemy.
-        List<Vector3> possiblePositions = new List<Vector3>();
-        possiblePositions.Add(new Vector3(Enemy.GetChild(0).position.x + 1, 0, Enemy.GetChild(0).position.z));
-        possiblePositions.Add(new Vector3(Enemy.GetChild(0).position.x - 1, 0, Enemy.GetChild(0).position.z));
-        possiblePositions.Add(new Vector3(Enemy.GetChild(0).position.x, 0, Enemy.GetChild(0).position.z + 1));
-        possiblePositions.Add(new Vector3(Enemy.GetChild(0).position.x, 0, Enemy.GetChild(0).position.z - 1));
-        possiblePositions.Add(new Vector3(Enemy.GetChild(0).position.x + 1, 0, Enemy.GetChild(0).position.z + 1));
-        possiblePositions.Add(new Vector3(Enemy.GetChild(0).position.x + 1, 0, Enemy.GetChild(0).position.z - 1));
-        possiblePositions.Add(new Vector3(Enemy.GetChild(0).position.x - 1, 0, Enemy.GetChild(0).position.z + 1));
-        possiblePositions.Add(new Vector3(Enemy.GetChild(0).position.x - 1, 0, Enemy.GetChild(0).position.z - 1));
-
-        // Runs a check to see if any Units are nearby in order to attack them.
-        Vector3 enemyPosition = Vector3.zero;
-        float minDistance = Mathf.Infinity;
-
-        foreach (Vector3 Positions in possiblePositions)
-        {
-            float Distance = Vector3.Distance(Positions, Model.transform.position);
-            if (Distance < minDistance && !Kingdom.Grid.CheckWall(Mathf.RoundToInt(Positions.x), Mathf.RoundToInt(Positions.z)))
-            {
-                enemyPosition = Positions;
-                minDistance = Distance;
-            }
-        }
+        Status.text = "attacking";        
+        Vector3 enemyPosition = new Vector3(Enemy.GetChild(0).position.x, 0, Enemy.GetChild(0).position.z - 1);
+        
         // Start the attacking process, if it can't find a position then reset.
-        if (enemyPosition == Vector3.zero || Kingdom.Grid.CheckWall(Mathf.RoundToInt(enemyPosition.x), Mathf.RoundToInt(enemyPosition.z)))
+        if (Kingdom.Grid.CheckWall(Mathf.RoundToInt(enemyPosition.x), Mathf.RoundToInt(enemyPosition.z)))
         {
             Enemy.GetComponent<unitManager>().Status.text = "";
             Enemy.GetComponent<unitManager>().onSchedule = false;
@@ -417,19 +371,9 @@ public class unitManager : MonoBehaviour
 
         if (Random.value > 0.5f) ShowEmote(3);
         Target.position = new Vector3(enemyPosition.x, 0.5f, enemyPosition.z);
-
-        // Make sure to wait until it starts moving, and then reaches its destination and sometimes plays an Emote.
-        yield return new WaitUntil(() => AI.isMoving || Model.transform.position == new Vector3(Target.transform.position.x, Model.transform.position.y, Target.transform.position.z) || AI.isStuck);
-        // Creates a small check to see if the Unit can reach the Enemy.
-        if (AI.isStuck)
-        {
-            Enemy.GetComponent<unitManager>().Status.text = "";
-            Enemy.GetComponent<unitManager>().onSchedule = false;
-            Enemy = null;
-            Status.text = "";
-            onSchedule = false;
-            yield break;
-        }
+        // Make sure to wait until it starts moving, and then reaches its destination.
+        yield return new WaitUntil(() => AI.isMoving || Model.transform.position == new Vector3(Target.transform.position.x, Model.transform.position.y, Target.transform.position.z));
+        // Wait until the AI stops moving to attack.
         yield return new WaitUntil(() => !AI.isMoving);
         Enemy.GetComponent<unitManager>().HideEmote();
         Kingdom.ShowText(" " + Enemy.GetComponent<unitManager>().name + " is being attacked!", "");
@@ -468,23 +412,19 @@ public class unitManager : MonoBehaviour
         HideEmote();
         Status.text = "deceased";
         Target.transform.position = new Vector3(Model.transform.position.x, Target.transform.position.y, Model.transform.position.z);
-        onSchedule = false; AI.isStuck = false;
+        onSchedule = false;
         name += " Deceased";
 
         Model.GetComponent<SpriteRenderer>().color = new Color(1f, 1f, 1f, 0.5f);
         Model.transform.GetChild(0).GetComponent<TextMeshPro>().color = new Color(1f, 1f, 1f, 0.5f);
         Model.transform.GetChild(1).GetComponent<TextMeshPro>().color = new Color(1f, 1f, 1f, 0.4f);
         Model.GetComponent<SpriteRenderer>().sortingOrder = -1;
-
         Model.transform.Rotate(45, 0, 0);
 
         Kingdom.Grid.RemoveWall(Mathf.RoundToInt(Target.transform.position.x), Mathf.RoundToInt(Target.transform.position.z));
 
         // Triggers the game over scene, stopping the game.
-        if (Role == "King")
-        {
-            Kingdom.StartCoroutine(Kingdom.GameOver());
-        }
+        if (Role == "King") Kingdom.StartCoroutine(Kingdom.GameOver());        
         else if (Kingdom.Units.Count == 1)
         {
             Kingdom.GameOverObjectTitle.GetComponent<TextMeshProUGUI>().text = "The King has been abandoned.";
@@ -494,11 +434,8 @@ public class unitManager : MonoBehaviour
     // Plays an emote, before hiding it after that activity is over.
     void ShowEmote(int emoteInt)
     {
-        if (!AI.isStuck)
-        {
-            Emote.sprite = AI.emotePrefabs[emoteInt];
-            Model.transform.GetChild(0).gameObject.SetActive(false); Model.transform.GetChild(1).gameObject.SetActive(false);
-        }
+        Emote.sprite = AI.emotePrefabs[emoteInt];
+        Model.transform.GetChild(0).gameObject.SetActive(false); Model.transform.GetChild(1).gameObject.SetActive(false);
     }
     void HideEmote()
     {

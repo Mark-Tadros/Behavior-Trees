@@ -20,12 +20,6 @@ public class GridManager : MonoBehaviour
         if (x < 0 || x > 24 || y < 0 || y > 24) return false;
         else return Grid.IsWall(new Vector2Int(x, y));
     }
-    public void SetRoad(int x, int y) { Grid.SetRoad(new Vector2Int(x, y)); }
-    public bool CheckRoad(int x, int y)
-    {
-        if (x < 0 || x > 24 || y < 0 || y > 24) return false;
-        else return Grid.IsRoad(new Vector2Int(x, y));
-    }
     // Calculates and returns the most efficient pathway for the AI.
     public List<Vector2Int> ReturnPath(Vector2Int Start, Vector2Int End)
     {
@@ -33,13 +27,14 @@ public class GridManager : MonoBehaviour
         if (Path == null) return null;
         else return Path;
     }
+    // Gets called once the game officially starts.
     public void SpawnTown()
     {
         // Spawns Units and initial Castle template.
         Kingdom.CreateBuilding("Castle", new Vector2(12, 12));
         TitleScreen.StartCoroutine(TitleScreen.StartGame());
     }
-    // Randomly generates names for each Unit.
+    // Randomly generates names for each Unit to create some personality.
     public string GenerateName()
     {
         string name = "";
@@ -48,6 +43,7 @@ public class GridManager : MonoBehaviour
         string[] secondComponent = new string[] { "ill", "ohn", "ich", "ob", "en", "al", "om", "alt", "og", "u", "ali", "at", "agn", "ar", "o", "isa", "ea", "ab", "ec", "ul", "el", "es" };
         string[] thirdComponent = new string[] { "ia", "ai", "ar", "er", "ry", "ph", "as", "er", "gh", "ce", "il", "es", "gar", "an", "bella", "ma", "tri", "el", "ilia", "y", "iz", "h" };
         string[] fourthComponent = new string[] { "m", "n", "d", "t", "y", "h", "s", "r", "e", "a", "l" };
+        // Takes a random length and picks some random parts from above to create a coherent name.
         for (int i = 0; i < nameLength; i++)
         {
             if (i == 0) name += firstComponent[Random.Range(0, firstComponent.Length)];

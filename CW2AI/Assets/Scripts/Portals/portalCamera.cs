@@ -1,4 +1,4 @@
-﻿//Locates the opposing Camera and Plane and allows both sides to look similar.
+﻿// Locates the opposing Camera and Plane and allows both sides to look similar.
 using UnityEngine;
 
 public class portalCamera : MonoBehaviour
@@ -6,8 +6,7 @@ public class portalCamera : MonoBehaviour
     public Transform playerCamera;
     public Transform portal;
     public Transform otherPortal;
-	
-	// Update is called once per frame
+
 	public void Update ()
     {
         //Updates the Position to be Offset from the other Camera.

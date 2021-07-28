@@ -8,7 +8,6 @@ public class AIManager : MonoBehaviour
     GridManager Grid;
     public GameObject Target;
     public bool isMoving;
-    public bool isStuck;
     [HideInInspector] public float movementSpeed;
 
     List<Vector2Int> Path;
@@ -34,18 +33,18 @@ public class AIManager : MonoBehaviour
             new Vector2Int(Mathf.RoundToInt(Target.transform.position.x), Mathf.RoundToInt(Target.transform.position.z))
             );
 
-        if (Path == null) { Debug.Log("No path available"); isStuck = true; }
+        if (Path == null) { Debug.Log("No path available"); }
         else
         {
             isMoving = true;
-            // Adds a Wall where the Unit will end up to prevent overlapping.
+            // Adds a Wall where the Unit will end up to prevent overlapping with other moving units.
             Grid.RemoveWall(Mathf.RoundToInt(oldPosition.x), Mathf.RoundToInt(oldPosition.z));
             oldPosition = Target.transform.position;
             Grid.SetWall(Mathf.RoundToInt(Target.transform.position.x), Mathf.RoundToInt(Target.transform.position.z));
             StartCoroutine("FollowPath");
         }
     }
-    // Continously Follow that Path until it reaches its destination.
+    // Continously follow that Path until it reaches its destination.
     IEnumerator FollowPath()
     {
         Debug.Log("Following Path");
@@ -53,29 +52,11 @@ public class AIManager : MonoBehaviour
         Path.Remove(Path[0]);
         while (Path.Count > 0)
         {           
-            // Moves the Unit to the closest path, before removing it and moving on.
+            // Moves the Unit to the closest path, before removing that tile and moving to the next in the path.
             float maxDistance = movementSpeed * Time.deltaTime;
             transform.position = Vector3.MoveTowards(transform.position, new Vector3(Path[0].x, 0.5f, Path[0].y), maxDistance);
             // Upon reaching the destination, subtract one from Paths and repeat.
-            if (Vector3.Distance(transform.position, new Vector3(Path[0].x, 0.5f, Path[0].y)) < 0.001f)
-            {
-                // Makes that road slightly more visible each time.
-                Transform Building = null; int pathY = Path[0].y + 1;
-                for (int i = 0; i < Grid.Kingdom.Roads.Count; i++)
-                {
-                    if (Grid.Kingdom.Roads[i].name == Path[0].x + "," + pathY) Building = Grid.Kingdom.Roads[i];
-                    else if (Grid.Kingdom.Roads[i].name == Path[0].x + "," + Path[0].y)
-                    {
-                        float alphaValue = Grid.Kingdom.Roads[i].GetComponent<SpriteRenderer>().color.a + 0.02f;
-                        if (alphaValue > 0.6f) alphaValue = 0.6f;
-                        LeanTween.alpha(Grid.Kingdom.Roads[i].gameObject, alphaValue, 0.5f).setEase(LeanTweenType.easeInOutQuad);
-                        if (Grid.Kingdom.Roads[i].GetComponent<RoadManager>().BuildingEntrance && Building != null)
-                            LeanTween.alpha(Building.gameObject, alphaValue, 0.5f).setEase(LeanTweenType.easeInOutQuad);
-                        break;
-                    }
-                }
-                Path.Remove(Path[0]);
-            }
+            if (Vector3.Distance(transform.position, new Vector3(Path[0].x, 0.5f, Path[0].y)) < 0.001f) Path.Remove(Path[0]);
             yield return null;
         }
         isMoving = false;

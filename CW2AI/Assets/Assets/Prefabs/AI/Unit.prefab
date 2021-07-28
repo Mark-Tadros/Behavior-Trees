@@ -115,7 +115,7 @@ MonoBehaviour:
   m_fontColor32:
     serializedVersion: 2
     rgba: 16777215
-  m_fontColor: {r: 1, g: 1, b: 1, a: 0}
+  m_fontColor: {r: 1, g: 1, b: 1, a: 0.7490196}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -331,16 +331,15 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: -176036266048183331, guid: e52ac52365443dc4d9721944e91726fe,
-    type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 0}
+  m_Sprite: {fileID: 0}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
   m_DrawMode: 0
   m_Size: {x: 1, y: 1}
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
+  m_WasSpriteAssigned: 0
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!114 &8595610368097880129
@@ -357,6 +356,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Target: {fileID: 8595610368934364104}
   isMoving: 0
+  isStuck: 0
   movementSpeed: 0
   emotePrefabs:
   - {fileID: 1080487162475273900, guid: 2939dc2440a7e4847be762723e9955a3, type: 3}
@@ -412,15 +412,16 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Kingdom: {fileID: 0}
   Model: {fileID: 8595610368097880140}
+  AI: {fileID: 8595610368097880129}
   Target: {fileID: 8595610368934364111}
   Name: 
   Health: 10
   Role: 
-  Attack: 1
   Status: {fileID: 6388161222911589270}
   Emote: {fileID: 7378243753656274354}
   onSchedule: 0
   Schedule: []
+  Enemy: {fileID: 0}
 --- !u!1 &8595610368382822263
 GameObject:
   m_ObjectHideFlags: 0
@@ -536,7 +537,7 @@ MonoBehaviour:
   m_fontColor32:
     serializedVersion: 2
     rgba: 16777215
-  m_fontColor: {r: 1, g: 1, b: 1, a: 0}
+  m_fontColor: {r: 1, g: 1, b: 1, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:

@@ -1,4 +1,4 @@
-﻿//Updates the four Portals at the edge of the worlds.
+﻿// Updates the four Portals at the edge of the worlds.
 using UnityEngine;
 
 public class portalTexture : MonoBehaviour
@@ -9,10 +9,7 @@ public class portalTexture : MonoBehaviour
     public Material cameraMatA; public Material cameraMatB;
     public Material cameraMatC; public Material cameraMatD;
 
-    // Use this for initialization
     void Start() { UpdateTexture(); }
-
-    // Update is called once per frame
     public void UpdateTexture ()
     {
         //This gets called everytime the player changes or updates the Camera.
